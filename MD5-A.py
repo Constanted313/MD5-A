@@ -158,52 +158,52 @@ def MD5_Search(InputFolder):
 
 
 if __name__ == "__main__":
-    print("\n(1)Составить контрольные суммы файлов | (2)Найти файлы по данным контрольной суммы | (3)Выйти")
-    while True:
-        
-        while CurrentInput != op[0:2]:
-            CurrentInput = input(f"> {YELLOW}"); ec()
-        
-            if CurrentInput == op[0]:
-                while True:
-                    InputFolder = input(f" > Папка с файлами: {YELLOW}"); ec()
+print("\n(1)Составить контрольные суммы файлов | (2)Найти файлы по данным контрольной суммы | (3)Выйти")
+while True:
+    
+    while CurrentInput != op[0:2]:
+        CurrentInput = input(f"> {YELLOW}"); ec()
+    
+        if CurrentInput == op[0]:
+            while True:
+                InputFolder = input(f" > Папка с файлами: {YELLOW}"); ec()
 
-                    if not ("*") in InputFolder:
-                        if path.isdir(InputFolder): print(""); MD5_Calculate(InputFolder)
-                        else: print(f"   $ {RED}Каталог не найден.{ENDC}")
+                if not ("*") in InputFolder:
+                    if path.isdir(InputFolder): print(""); MD5_Calculate(InputFolder)
+                    else: print(f"   $ {RED}Каталог не найден.{ENDC}")
 
-                    elif InputFolder == "*назад": break
-                    else: s = 0; IgnoreFilesizeSet(InputFolder)
+                elif InputFolder == "*назад": break
+                else: s = 0; IgnoreFilesizeSet(InputFolder)
 
-            elif CurrentInput == op[1]:
-                OnlyNamesOldState = OnlyNames
-                OnlyNames = True
+        elif CurrentInput == op[1]:
+            OnlyNamesOldState = OnlyNames
+            OnlyNames = True
 
-                while True:
-                    md5_data_file = input(f" > Файл с MD5 данными: {YELLOW}"); ec()
+            while True:
+                md5_data_file = input(f" > Файл с MD5 данными: {YELLOW}"); ec()
 
-                    if path.isfile(md5_data_file):
-                        print(f"   $ {ORANGE}Используется:{ENDC} {YELLOW}{path.abspath(md5_data_file)}{ENDC}")
+                if path.isfile(md5_data_file):
+                    print(f"   $ {ORANGE}Используется:{ENDC} {YELLOW}{path.abspath(md5_data_file)}{ENDC}")
 
-                        while True:
-                            InputFolder = input(f"  > Папка с файлами для поиска: {YELLOW}"); ec()
+                    while True:
+                        InputFolder = input(f"  > Папка с файлами для поиска: {YELLOW}"); ec()
 
-                            if not ("*") in InputFolder:
-                                if path.isdir(InputFolder): MD5_Search(InputFolder)
-                                else: print(f"    $ {RED}Каталог не найден.{ENDC}")
+                        if not ("*") in InputFolder:
+                            if path.isdir(InputFolder): MD5_Search(InputFolder)
+                            else: print(f"    $ {RED}Каталог не найден.{ENDC}")
 
-                            elif InputFolder == "*назад": break
-                            elif InputFolder == "*имена":  OnlyNames = True;  print(f"    $ {ORANGE}Только имена файлов.{ENDC}")
-                            elif InputFolder == "*полные": OnlyNames = False; print(f"    $ {ORANGE}Полные пути ко всем файлам.{ENDC}")
-                            else: s = 1; IgnoreFilesizeSet(InputFolder)
+                        elif InputFolder == "*назад": break
+                        elif InputFolder == "*имена":  OnlyNames = True;  print(f"    $ {ORANGE}Только имена файлов.{ENDC}")
+                        elif InputFolder == "*полные": OnlyNames = False; print(f"    $ {ORANGE}Полные пути ко всем файлам.{ENDC}")
+                        else: s = 1; IgnoreFilesizeSet(InputFolder)
 
-                    elif md5_data_file == "*назад": break
-                    else: print(f"   $ {RED}Файл{ENDC} {YELLOW}{md5_data_file}{ENDC} {RED}не найден.{ENDC}")
-                
-                OnlyNames = OnlyNamesOldState
-
-
-            elif CurrentInput == "*имена":  OnlyNames = True;  print(f"  $ {ORANGE}Только имена файлов.{ENDC}")
-            elif CurrentInput == "*полные": OnlyNames = False; print(f"  $ {ORANGE}Полные пути ко всем файлам.{ENDC}")
+                elif md5_data_file == "*назад": break
+                else: print(f"   $ {RED}Файл{ENDC} {YELLOW}{md5_data_file}{ENDC} {RED}не найден.{ENDC}")
             
-            elif CurrentInput == op[2]: ec(); exit()
+            OnlyNames = OnlyNamesOldState
+
+
+        elif CurrentInput == "*имена":  OnlyNames = True;  print(f"  $ {ORANGE}Только имена файлов.{ENDC}")
+        elif CurrentInput == "*полные": OnlyNames = False; print(f"  $ {ORANGE}Полные пути ко всем файлам.{ENDC}")
+        
+        elif CurrentInput == op[2]: ec(); exit()
