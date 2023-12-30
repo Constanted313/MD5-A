@@ -2,7 +2,8 @@ from os import path, walk, get_terminal_size
 from time import time
 from hashlib import md5 as calc_md5_for
 
-
+print(len("    $ Подсчёт количества файлов в выбранном каталоге.."))
+print(len("    $ События:"))
 IgnoreFilesize = 99 ** 99
 OnlyNames      = False
 InputFolder    = ""
@@ -100,13 +101,17 @@ def MD5_Search(InputFolder):
     f_passed = 0
     f_errors = 0
 
-    print(f"\n    $ {ORANGE}Выбранная для поиска папка:{ENDC} {YELLOW}{InputFolder}{ENDC}; {ORANGE}Файл с MD5 данными:{ENDC} {YELLOW}{path.abspath(md5_data_file)}{ENDC}.\n    $ События: ")
-    print("    $ Поиск по списку MD5 данных в выбранной папке.. ", end='')
+    print(f"\n    $ {ORANGE}Выбранная для поиска папка:{ENDC} {YELLOW}{InputFolder}{ENDC}; {ORANGE}Файл с MD5 данными:{ENDC} {YELLOW}{path.abspath(md5_data_file)}{ENDC}.")
 
+    print("    $ Импорт контрольных сумм из выбранного файла..", end='')
     with open(md5_data_file, encoding='utf-8') as md5log_file:
         md5log_IMPORTED = [row.strip() for row in md5log_file]
 
+    print("\r    $ Подсчёт количества файлов в выбранном каталоге..", end='', flush=True)
     f_count_total = sum(len(files) for root, dirs, files in walk(InputFolder))
+
+    print(f"\r    $ События:{' ' * 40}", flush=True)
+    print("    $ Поиск по списку MD5 данных в выбранной папке.. ", end='')
     for filefolder, dirs, files in walk(InputFolder):
         for filename in files:
 
@@ -167,42 +172,42 @@ if __name__ == "__main__":
             if CurrentInput == op[0]:
                 while True:
                     InputFolder = input(f" > Папка с файлами: {YELLOW}"); ec()
-    
+
                     if not ("*") in InputFolder:
                         if path.isdir(InputFolder): print(""); MD5_Calculate(InputFolder)
                         else: print(f"   $ {RED}Каталог не найден.{ENDC}")
-    
+
                     elif InputFolder == "*назад": break
                     else: s = 0; IgnoreFilesizeSet(InputFolder)
-    
+
             elif CurrentInput == op[1]:
                 OnlyNamesOldState = OnlyNames
                 OnlyNames = True
-    
+
                 while True:
                     md5_data_file = input(f" > Файл с MD5 данными: {YELLOW}"); ec()
-    
+
                     if path.isfile(md5_data_file):
                         print(f"   $ {ORANGE}Используется:{ENDC} {YELLOW}{path.abspath(md5_data_file)}{ENDC}")
-    
+
                         while True:
                             InputFolder = input(f"  > Папка с файлами для поиска: {YELLOW}"); ec()
-    
+
                             if not ("*") in InputFolder:
                                 if path.isdir(InputFolder): MD5_Search(InputFolder)
                                 else: print(f"    $ {RED}Каталог не найден.{ENDC}")
-    
+
                             elif InputFolder == "*назад": break
                             elif InputFolder == "*имена":  OnlyNames = True;  print(f"    $ {ORANGE}Только имена файлов.{ENDC}")
                             elif InputFolder == "*полные": OnlyNames = False; print(f"    $ {ORANGE}Полные пути ко всем файлам.{ENDC}")
                             else: s = 1; IgnoreFilesizeSet(InputFolder)
-    
+
                     elif md5_data_file == "*назад": break
                     else: print(f"   $ {RED}Файл{ENDC} {YELLOW}{md5_data_file}{ENDC} {RED}не найден.{ENDC}")
                 
                 OnlyNames = OnlyNamesOldState
-    
-    
+
+
             elif CurrentInput == "*имена":  OnlyNames = True;  print(f"  $ {ORANGE}Только имена файлов.{ENDC}")
             elif CurrentInput == "*полные": OnlyNames = False; print(f"  $ {ORANGE}Полные пути ко всем файлам.{ENDC}")
             
