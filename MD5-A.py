@@ -2,8 +2,7 @@ from os import path, walk, get_terminal_size
 from time import time
 from hashlib import md5 as calc_md5_for
 
-print(len("    $ Подсчёт количества файлов в выбранном каталоге.."))
-print(len("    $ События:"))
+
 IgnoreFilesize = 99 ** 99
 OnlyNames      = False
 InputFolder    = ""
