@@ -4,6 +4,7 @@ from hashlib import md5 as calc_md5_for
 
 
 IgnoreFilesize = 99 ** 99
+IgnoreFolders  = []
 OnlyNames      = False
 InputFolder    = ""
 CurrentInput   = ""
@@ -17,14 +18,27 @@ ENDC   = "\u001b[0m"
 def ec(): print(ENDC, end='')
 
 s = 0
-def IgnoreFilesizeSet(InputFolder):
+def IgnoreObjSet(InputFolder):
     global IgnoreFilesize
+    global IgnoreFolders
+
+    blockedsymbols = ['/', '\\', ':', '?', '<', '>', '|']
+
+    InputFolder = InputFolder.split("*")
 
     try:
-        IgnoreFilesize = float(InputFolder.split("*")[-1])
-        print(f"{' ' * s}   $ {ORANGE}Установлено игнорирование файлов весом более{ENDC} {IgnoreFilesize} МБ{ORANGE} в вводимом каталоге.{ENDC}")
+        InputFolder.pop(0)
+        IgnoreFilesize = float(InputFolder[0]) # IgnoreFilesize
+        print(f"{' ' * s}   $ {ORANGE}Установлено игнорирование файлов весом более{ENDC} {IgnoreFilesize} МБ {ORANGE}в вводимом каталоге.{ENDC}")
+        
+        if len(InputFolder) > 1: # IgnoreFolders
+            InputFolder.pop(0)   # Убирает первый IgnoreFilesize из списка
+            for i in InputFolder: IgnoreFolders.append(i) if not i in blockedsymbols and not i in IgnoreFolders else None
+            
+            IgnoreFolders[:] = [x for x in IgnoreFolders]
+            print(f"{' ' * s}   $ {ORANGE}Установлено игнорирование каталогов с названиями{ENDC} {IgnoreFolders}")
 
-    except: print(f"{' ' * s}   {RED}Вводите размер в числовом виде.{ENDC}")
+    except: print(f"{' ' * s}   $ {RED}Вводите вес в числовом виде{ENDC}")
 
 
 def MD5_Calculate(InputFolder):
@@ -39,14 +53,28 @@ def MD5_Calculate(InputFolder):
     
     for filefolder, dirs, files in walk(InputFolder):
         for filename in files:
+            
             f_passed += 1
+            
+            Ignored = False
             
             fullpath    = f"{filefolder}\\{filename}"
             filesize_mb = path.getsize(fullpath) / (1024*1024)
 
-            try:
-                if filesize_mb < IgnoreFilesize and filename != "desktop.ini":
+            if len(IgnoreFolders) > 0:
+                filefolder_splitted = filefolder.split("\\")
+                i = 0
 
+                while i < len(filefolder_splitted):
+                    if filefolder_splitted[i] in IgnoreFolders:
+                        Ignored = True
+                        i = 0; break
+                    else: i += 1
+                i = 0
+
+            try:
+                if filesize_mb < IgnoreFilesize and filesize_mb > 0 and filename != "desktop.ini" and not Ignored:
+                    
                     TerminalWidth = get_terminal_size()[0]
                     info = f"\r{' ' * 36}← {fullpath if not OnlyNames else filename}"
                     if len(info) > TerminalWidth: info = info[0:TerminalWidth-3] + " .."
@@ -57,8 +85,8 @@ def MD5_Calculate(InputFolder):
                         md5log  += f"{fullpath if not OnlyNames else filename}\n{md5_hash}\n"
                         
                         f_calced += 1
-
-                    print(f"\r   {md5_hash}", flush=True)
+                        
+                        print(f"\r   {md5_hash}", flush=True)
 
             except Exception as e: f_errors += 1; print(f"\r   {RED}{e}{ENDC}", flush=True)
 
@@ -110,7 +138,6 @@ def MD5_Search(InputFolder):
     f_count_total = sum(len(files) for root, dirs, files in walk(InputFolder))
 
     print(f"\r    $ События:{' ' * 40}", flush=True)
-    print("    $ Поиск по списку MD5 данных в выбранной папке.. ", end='')
     for filefolder, dirs, files in walk(InputFolder):
         for filename in files:
 
@@ -137,6 +164,7 @@ def MD5_Search(InputFolder):
                             md5log_IMPORTED_founded_filename = md5log_IMPORTED[md5log_IMPORTED_founded_md5index - 1]
 
                             print(f"\r      {GREEN}Найден: {md5log_IMPORTED_founded_filename}{ENDC} (MD5:{md5log_IMPORTED_founded_md5}) как {YELLOW}{fullpath}{ENDC}", flush=True)
+                            
                             f_founds += 1
 
             except Exception as e: f_errors += 1; print(f"\r      {RED}Ошибка: {fullpath}{ENDC}: {YELLOW}{e}{ENDC}", flush=True)     
@@ -172,12 +200,17 @@ if __name__ == "__main__":
                 while True:
                     InputFolder = input(f" > Папка с файлами: {YELLOW}"); ec()
 
-                    if not ("*") in InputFolder:
+                    if not "*" in InputFolder:
                         if path.isdir(InputFolder): print(""); MD5_Calculate(InputFolder)
                         else: print(f"   $ {RED}Каталог не найден.{ENDC}")
 
                     elif InputFolder == "*назад": break
-                    else: s = 0; IgnoreFilesizeSet(InputFolder)
+                    elif InputFolder == "*очистить": 
+                        IgnoreFolders.clear()
+                        IgnoreFilesize = 99 ** 99
+                        print(f"   $ {ORANGE}Список игнорируемых папок и игнорируемый размер файлов очищены.{ENDC}")
+
+                    else: s = 0; IgnoreObjSet(InputFolder)
 
             elif CurrentInput == op[1]:
                 OnlyNamesOldState = OnlyNames
@@ -199,7 +232,12 @@ if __name__ == "__main__":
                             elif InputFolder == "*назад": break
                             elif InputFolder == "*имена":  OnlyNames = True;  print(f"    $ {ORANGE}Только имена файлов.{ENDC}")
                             elif InputFolder == "*полные": OnlyNames = False; print(f"    $ {ORANGE}Полные пути ко всем файлам.{ENDC}")
-                            else: s = 1; IgnoreFilesizeSet(InputFolder)
+                            elif InputFolder == "*очистить": 
+                                IgnoreFolders.clear()
+                                IgnoreFilesize = 99 ** 99
+                                print(f"   $ {ORANGE}Список игнорируемых папок и игнорируемый размер файлов очищены.{ENDC}")
+
+                            else: s = 1; IgnoreObjSet(InputFolder)
 
                     elif md5_data_file == "*назад": break
                     else: print(f"   $ {RED}Файл{ENDC} {YELLOW}{md5_data_file}{ENDC} {RED}не найден.{ENDC}")
