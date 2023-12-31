@@ -27,14 +27,12 @@ def IgnoreObjSet(InputFolder):
 
     try:
         InputFolder.pop(0)
-        IgnoreFilesize = float(InputFolder[0]) # IgnoreFilesize
+        IgnoreFilesize = float(InputFolder[0])
         print(f"{' ' * s}   $ {ORANGE}Установлено игнорирование файлов весом более{ENDC} {IgnoreFilesize} МБ {ORANGE}в вводимом каталоге.{ENDC}")
         
-        if len(InputFolder) > 1: # IgnoreFolders
-            InputFolder.pop(0)   # Убирает первый IgnoreFilesize из списка
+        if len(InputFolder) > 1:
+            InputFolder.pop(0)
             for i in InputFolder: IgnoreFolders.append(i) if not i in blockedsymbols and not i in IgnoreFolders else None
-            
-            IgnoreFolders[:] = [x for x in IgnoreFolders]
             print(f"{' ' * s}   $ {ORANGE}Установлено игнорирование каталогов с названиями{ENDC} {IgnoreFolders}")
 
     except: print(f"{' ' * s}   $ {RED}Вводите вес в числовом виде{ENDC}")
@@ -81,11 +79,11 @@ def MD5_Calculate(InputFolder):
     
     for filefolder, dirs, files in walk(InputFolder):
         for filename in files:
-            
+
             f_passed += 1
-            
+
             Ignored = False
-            
+
             fullpath    = f"{filefolder}\\{filename}"
             filesize_mb = path.getsize(fullpath) / (1024*1024)
 
@@ -99,13 +97,13 @@ def MD5_Calculate(InputFolder):
                         info = f"\r{' ' * 36}← {fullpath if not OnlyNames else filename}"; TerminalWidth = get_terminal_size()[0]
                         if len(info) > TerminalWidth: info = info[0:TerminalWidth-3] + " .."
                         print(info, end='')
-                        
+
                         with open(fullpath, 'rb') as fp:
                             md5_hash = calc_md5_for(fp.read()).hexdigest()
                             md5log  += f"{fullpath if not OnlyNames else filename}\n{md5_hash}\n"
-                            
+
                             f_calced += 1
-                            
+
                             print(f"\r   {md5_hash}", flush=True)
 
                     except Exception as e: f_errors += 1; print(f"\r   {RED}{e}{ENDC}", flush=True)
@@ -193,10 +191,10 @@ def MD5_Search(InputFolder):
                                 md5log_IMPORTED_founded_filename = md5log_IMPORTED[md5log_IMPORTED_founded_md5index - 1]
 
                                 print(f"\r      {GREEN}Найден: {md5log_IMPORTED_founded_filename}{ENDC} (MD5:{md5log_IMPORTED_founded_md5}) как {YELLOW}{fullpath}{ENDC}", flush=True)
-                                
+
                                 f_founds += 1
 
-                    except Exception as e: f_errors += 1; print(f"\r      {RED}Ошибка: {filename}{ENDC}: {YELLOW}{e}{ENDC}", flush=True)     
+                    except Exception as e: f_errors += 1; print(f"\r      {RED}Ошибка: {filename}{ENDC}: {YELLOW}{e}{ENDC}", flush=True)
 
     TerminalWidth = get_terminal_size()[0]
     if f_founds == 0: print(f"\r{' ' * TerminalWidth}\n\r      Ничего не найдено . . .{' ' * (TerminalWidth - 29)}\n\n    $ {ORANGE}Поиск по списку MD5 данных в выбранной папке завершён.{ENDC}{' ' * (TerminalWidth - 60)}", flush=True)
