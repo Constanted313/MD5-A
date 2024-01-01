@@ -79,8 +79,6 @@ def MD5_Calculate(InputFolder):
     
     md5log   = ''
 
-    i = 0
-    
     for filefolder, dirs, files in walk(InputFolder):
         for filename in files:
 
