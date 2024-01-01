@@ -18,27 +18,29 @@ ENDC   = "\u001b[0m"
 def ec(): print(ENDC, end='')
 
 s = 0
-blockedsymbols = ['/', '\\', ':', '?', '<', '>', '|']
 def IgnoreObjSet(InputFolder):
     global IgnoreFilesize
-    global IgnoreFolders
-
-    InputFolder = InputFolder.split("*")
+    global IgnoreFolders                             # input(InputFolder with *): *IgnoreFilesize(int/float -> float)*IgnoreFolders(anytype -> str)*IgnoreFolders(anytype -> str)*IgnoreFolders(anytype -> str)*..
+                                                     #                    Steps + Example: 
+    InputFolder = InputFolder.split("*")                                        # *10*folder1*folder2  ->  ['', '10', 'folder1', 'folder2']
+    InputFolder.pop(0)                                                          # ['', '10', 'folder1', 'folder2'']  ->  ['10', 'folder1', 'folder2']
 
     try:
-        InputFolder.pop(0)
-        IgnoreFilesize = float(InputFolder[0])
+        IgnoreFilesize = float(InputFolder[0])                                  # IgnoreFilesize = 10.0 Megabytes
         print(f"{' ' * s}   $ {ORANGE}Установлено игнорирование файлов весом более{ENDC} {IgnoreFilesize} МБ {ORANGE}в вводимом каталоге.{ENDC}")
-        
-        if len(InputFolder) > 1:
-            InputFolder.pop(0)
-            for i in InputFolder: IgnoreFolders.append(i) if not i in blockedsymbols and not i in IgnoreFolders else None
-            print(f"{' ' * s}   $ {ORANGE}Установлено игнорирование каталогов с названиями{ENDC} {IgnoreFolders}")
 
-    except: print(f"{' ' * s}   $ {RED}Вводите вес в числовом виде{ENDC}")
+    except:  # InputFolder[0] != int/float
+        if len(InputFolder) == 1: print(f"{' ' * s}   $ {RED}Вводите вес в числовом виде{ENDC}")  # if only ['not int/float']
+        else: None
 
-def ClearIgnore(IgnoreFolders):
+    if len(InputFolder) > 1:  # if ['int/float', ..]
+        InputFolder.pop(0)    #    ['10', 'folder1', 'folder2']  ->  ['folder1', 'folder2']
+        for i in InputFolder: IgnoreFolders.append(i) if not i in IgnoreFolders else None  # IgnoreFolders = ['folder1', 'folder2']
+        print(f"{' ' * s}   $ {ORANGE}Установлено игнорирование каталогов с названиями{ENDC} {IgnoreFolders}")
+
+def ClearIgnore():
     global IgnoreFilesize
+    global IgnoreFolders
 
     IgnoreFolders.clear()
     IgnoreFilesize = 99 ** 99
@@ -57,7 +59,7 @@ def CheckIgnore(filefolder):
         if filefolder_splitted[i] in IgnoreFolders:
 
             Ignored = True
-            i = 0; break
+            break
         
         else: i += 1
 
@@ -66,6 +68,8 @@ def CheckIgnore(filefolder):
 def MD5_Calculate(InputFolder):
     global IgnoreFilesize
     global Ignored
+
+    print("")
 
     t_start = time()
 
@@ -82,16 +86,14 @@ def MD5_Calculate(InputFolder):
 
             f_passed += 1
 
-            Ignored = False
-
             fullpath    = f"{filefolder}\\{filename}"
             filesize_mb = path.getsize(fullpath) / (1024*1024)
 
+            Ignored = False
             if len(IgnoreFolders) > 0: CheckIgnore(filefolder)
 
-
-            if filesize_mb < IgnoreFilesize and filesize_mb > 0:
-                if filename != "desktop.ini" and not Ignored:
+            if filename != "desktop.ini" and not Ignored:
+                if filesize_mb < IgnoreFilesize and filesize_mb > 0:
 
                     try:
                         info = f"\r{' ' * 36}← {fullpath if not OnlyNames else filename}"; TerminalWidth = get_terminal_size()[0]
@@ -101,12 +103,14 @@ def MD5_Calculate(InputFolder):
                         with open(fullpath, 'rb') as fp:
                             md5_hash = calc_md5_for(fp.read()).hexdigest()
                             md5log  += f"{fullpath if not OnlyNames else filename}\n{md5_hash}\n"
-
+                            
                             f_calced += 1
 
                             print(f"\r   {md5_hash}", flush=True)
 
                     except Exception as e: f_errors += 1; print(f"\r   {RED}{e}{ENDC}", flush=True)
+
+    if f_calced == 0: print(f"   Контрольные суммы не составлены ни для одно файла . . .{' ' * (get_terminal_size()[0] - 58)}")
 
 
     t_total = time() - t_start
@@ -164,16 +168,14 @@ def MD5_Search(InputFolder):
 
             f_passed += 1
 
-            Ignored = False
-
             fullpath    = f"{filefolder}\\{filename}"
             filesize_mb = path.getsize(fullpath) / (1024*1024)
 
+            Ignored = False
             if len(IgnoreFolders) > 0: CheckIgnore(filefolder)
 
-
-            if filesize_mb < IgnoreFilesize and filesize_mb > 0:
-                if filename != "desktop.ini" and not Ignored:
+            if filename != "desktop.ini" and not Ignored:
+                if filesize_mb < IgnoreFilesize and filesize_mb > 0:
                     try:
 
                         searching = f"\r    $ Поиск по списку MD5 данных в выбранной папке: {f_passed}/{f_count_total} {filename if OnlyNames else fullpath}"
@@ -181,7 +183,8 @@ def MD5_Search(InputFolder):
                         if len(searching) > TerminalWidth: searching = searching[0:TerminalWidth-3] + " .."
                         print(searching, end='', flush=True)
 
-                        with open(fullpath, 'rb') as fp: curr_md5_hash = calc_md5_for(fp.read()).hexdigest()
+                        with open(fullpath, 'rb') as fp: 
+                            curr_md5_hash = calc_md5_for(fp.read()).hexdigest()
 
                         if curr_md5_hash in md5log_IMPORTED:
                             md5log_IMPORTED_founded_md5index = md5log_IMPORTED.index(curr_md5_hash)
@@ -214,7 +217,7 @@ def MD5_Search(InputFolder):
        ⌞{bordersize}⌟
     """)
 
-    print(f"{'―' * TerminalWidth}\n") 
+    print(f"{'―' * get_terminal_size()[0]}\n") 
 
 
 if __name__ == "__main__":
@@ -229,11 +232,11 @@ if __name__ == "__main__":
                     InputFolder = input(f" > Папка с файлами: {YELLOW}"); ec()
 
                     if not "*" in InputFolder:
-                        if path.isdir(InputFolder): print(""); MD5_Calculate(InputFolder)
+                        if path.isdir(InputFolder): MD5_Calculate(InputFolder)
                         else: print(f"   $ {RED}Каталог не найден.{ENDC}")
 
                     elif InputFolder == "*назад"   : break
-                    elif InputFolder == "*очистить": ClearIgnore(IgnoreFolders)
+                    elif InputFolder == "*очистить": ClearIgnore()
                     else: s = 0; IgnoreObjSet(InputFolder)
 
             elif CurrentInput == op[1]:
@@ -254,9 +257,9 @@ if __name__ == "__main__":
                                 else: print(f"    $ {RED}Каталог не найден.{ENDC}")
 
                             elif InputFolder == "*назад"   : break
-                            elif InputFolder == "*имена"   : OnlyNames = True;  print(f"    $ {ORANGE}Только имена файлов.{ENDC}")
+                            elif InputFolder == "*имена"   : OnlyNames = True ; print(f"    $ {ORANGE}Только имена файлов.{ENDC}")
                             elif InputFolder == "*полные"  : OnlyNames = False; print(f"    $ {ORANGE}Полные пути ко всем файлам.{ENDC}")
-                            elif InputFolder == "*очистить": ClearIgnore(IgnoreFolders)
+                            elif InputFolder == "*очистить": ClearIgnore()
                             else: s = 1; IgnoreObjSet(InputFolder)
 
                     elif md5_data_file == "*назад": break
@@ -264,7 +267,7 @@ if __name__ == "__main__":
                 
                 OnlyNames = OnlyNamesOldState
 
-            elif CurrentInput == "*имена" : OnlyNames = True;  print(f"  $ {ORANGE}Только имена файлов.{ENDC}")
+            elif CurrentInput == "*имена" : OnlyNames = True ; print(f"  $ {ORANGE}Только имена файлов.{ENDC}")
             elif CurrentInput == "*полные": OnlyNames = False; print(f"  $ {ORANGE}Полные пути ко всем файлам.{ENDC}")
             
             elif CurrentInput == op[2]: ec(); exit()
