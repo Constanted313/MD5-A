@@ -1,3 +1,4 @@
+from audioop import byteswap
 from os import path, walk, get_terminal_size
 from hashlib import md5 as calc_md5_for
 from datetime import date, datetime
@@ -185,6 +186,8 @@ def MD5_Calculate(InputFolder):
 
 def MD5_Search(InputFolder):
     global Ignored
+    
+    allfounded = False
 
     InputFolder = path.abspath(InputFolder)
 
@@ -200,46 +203,52 @@ def MD5_Search(InputFolder):
 
     print("\r    $ Подсчёт количества файлов в выбранном каталоге..", end='')
     f_count_total = sum(len(files) for root, dirs, files in walk(InputFolder))
+    f_count_inlog = int(len(md5log_IMPORTED) / 2)
 
     print(f"\r    $ События:{' ' * 40}", flush=True)
     
     for filefolder, dirs, files in walk(InputFolder):
-        for filename in files:
+        if not allfounded:
+            for filename in files:
 
-            fullpath    = f"{filefolder}\\{filename}"
-            filesize_mb = path.getsize(fullpath) / (1024*1024)
+                fullpath    = f"{filefolder}\\{filename}"
+                filesize_mb = path.getsize(fullpath) / (1024*1024)
 
-            Ignored = False
-            if len(IgnoreFolders) > 0: CheckIgnore(filefolder)
+                Ignored = False
+                if len(IgnoreFolders) > 0: CheckIgnore(filefolder)
 
-            if filename != "desktop.ini":
+                if filename != "desktop.ini":
 
-                f_passed += 1
+                    f_passed += 1
 
-                if not Ignored:
-                    if filesize_mb > IgnoreFilesize_Min and filesize_mb < IgnoreFilesize_Max:
+                    if not Ignored:
+                        if filesize_mb > IgnoreFilesize_Min and filesize_mb < IgnoreFilesize_Max:
 
-                        try:
+                            try:
 
-                            searching = f"\r    $ Поиск по списку MD5 данных в выбранной папке: {f_passed}/{f_count_total} {filename if OnlyNames else fullpath}"
-                            TerminalWidth = get_terminal_size()[0]; searching += ' ' * (TerminalWidth - len(searching))
-                            if len(searching) > TerminalWidth: searching = searching[0:TerminalWidth-3] + " .."
-                            print(searching, end='', flush=True)
+                                searching = f"\r    $ Поиск по списку MD5 данных в выбранной папке: {f_passed}/{f_count_total} {filename if OnlyNames else fullpath}"
+                                TerminalWidth = get_terminal_size()[0]; searching += ' ' * (TerminalWidth - len(searching))
+                                if len(searching) > TerminalWidth: searching = searching[0:TerminalWidth-3] + " .."
+                                print(searching, end='', flush=True)
 
-                            with open(fullpath, 'rb') as fp:
-                                curr_md5_hash = calc_md5_for(fp.read()).hexdigest()
+                                with open(fullpath, 'rb') as fp:
+                                    curr_md5_hash = calc_md5_for(fp.read()).hexdigest()
 
-                            if curr_md5_hash in md5log_IMPORTED:
-                                md5log_IMPORTED_founded_md5index = md5log_IMPORTED.index(curr_md5_hash)
+                                if curr_md5_hash in md5log_IMPORTED:
+                                    md5log_IMPORTED_founded_md5index = md5log_IMPORTED.index(curr_md5_hash)
 
-                                md5log_IMPORTED_founded_md5      = md5log_IMPORTED[md5log_IMPORTED_founded_md5index]
-                                md5log_IMPORTED_founded_filename = md5log_IMPORTED[md5log_IMPORTED_founded_md5index - 1]
+                                    if md5log_IMPORTED_founded_md5index % 2 != 0:
+                                        md5log_IMPORTED_founded_md5      = md5log_IMPORTED[md5log_IMPORTED_founded_md5index]
+                                        md5log_IMPORTED_founded_filename = md5log_IMPORTED[md5log_IMPORTED_founded_md5index - 1]
 
-                                f_founds += 1; print(f"\r      {GREEN}Найден: {md5log_IMPORTED_founded_filename}{ENDC} (MD5:{md5log_IMPORTED_founded_md5}) как {YELLOW}{fullpath}{ENDC}", flush=True)
+                                        f_founds += 1; print(f"\r      {GREEN}Найден: {md5log_IMPORTED_founded_filename}{ENDC} (MD5:{md5log_IMPORTED_founded_md5}) как {YELLOW}{fullpath}{ENDC}", flush=True)
 
-                                founded_log += f"---\n  > {md5log_IMPORTED_founded_filename}\n\n    {fullpath}\n"
+                                        founded_log += f"---\n  > {md5log_IMPORTED_founded_filename}\n\n    {fullpath}\n"
 
-                        except Exception as e: f_errors += 1; print(f"\r      {RED}Ошибка: {filename}{ENDC}: {YELLOW}{e}{ENDC}", flush=True)
+                                        if f_founds == f_count_inlog:
+                                            allfounded = True
+
+                            except Exception as e: f_errors += 1; print(f"\r      {RED}Ошибка: {filename}{ENDC}: {YELLOW}{e}{ENDC}", flush=True)
 
 
     TerminalWidth = get_terminal_size()[0]
@@ -249,11 +258,14 @@ def MD5_Search(InputFolder):
 
     t_total = round(time() - t_start, 2)
 
-    bordersize = ' ' * (23 + len(str(f_passed)))
+    
+    if len(str(f_count_inlog) + str(f_founds)) + 1 < len(str(f_passed)): bordersize = ' ' * ( 23 + len(str(f_passed)) )
+    else: bordersize = ' ' * ( 23 + len(str(f_count_inlog) + str(f_founds)) + 1 )
+
     print(f"""
        ⌜{bordersize}⌝
          Файлов просмотрено:  {YELLOW}{f_passed}{ENDC}
-         Файлов найдено:      {GREEN }{f_founds}{ENDC}
+         Файлов найдено:      {GREEN }{f_founds}/{f_count_inlog}{ENDC}
          Ошибок:              {RED   }{f_errors}{ENDC}
 
          Время: {ORANGE}{t_total} с{ENDC}.
@@ -262,7 +274,7 @@ def MD5_Search(InputFolder):
     
     if f_founds > 0:
         while True:
-            founded_log_file = input(f" > Имя/Путь+имя Markdown-лога найденных файлов: {YELLOW}"); ec()
+            founded_log_file = input(f"    > Имя/Путь+имя Markdown-лога найденных файлов: {YELLOW}"); ec()
 
             if founded_log_file == "*отмена": break
 
@@ -273,12 +285,12 @@ def MD5_Search(InputFolder):
 
                     md5l = open(founded_log_file, 'w', encoding='utf-8')
                     md5l.write(founded_log), md5l.close()
-                    print(f"{ENDC}\r   $ {ORANGE}Файл{ENDC} {YELLOW}{path.abspath(founded_log_file)}{ENDC} (Markdown) {ORANGE}сохранён.{ENDC}", flush=True)
+                    print(f"{ENDC}\r    $ {ORANGE}Файл{ENDC} {YELLOW}{path.abspath(founded_log_file)}{ENDC} (Markdown) {ORANGE}сохранён.{ENDC}", flush=True)
                     break
 
-                except PermissionError : print(f"\r   $ {RED}Ошибка создания файла{ENDC} ({YELLOW}Нет разрешения{ENDC}).", flush=True)
-                except OSError         : print(f"\r   $ {RED}Ошибка создания файла{ENDC} ({YELLOW}Имя файла не должно содержать специальные символы{ENDC}).", flush=True)
-                except Exception as e  : print(f"\r   $ {RED}Ошибка создания файла{ENDC} ({YELLOW}{e}{ENDC}).", flush=True)
+                except PermissionError : print(f"\r    $ {RED}Ошибка создания файла{ENDC} ({YELLOW}Нет разрешения{ENDC}).", flush=True)
+                except OSError         : print(f"\r    $ {RED}Ошибка создания файла{ENDC} ({YELLOW}Имя файла не должно содержать специальные символы{ENDC}).", flush=True)
+                except Exception as e  : print(f"\r    $ {RED}Ошибка создания файла{ENDC} ({YELLOW}{e}{ENDC}).", flush=True)
 
     print(f"{'―' * get_terminal_size()[0]}\n")
 
@@ -324,8 +336,8 @@ if __name__ == "__main__":
 
                         with open(md5_data_file, encoding='utf-8') as md5log_file:
                             md5log_IMPORTED = [row.strip() for row in md5log_file]
-                        if md5log_IMPORTED[-1] == "MD5LOG": print(f"   $ {ORANGE}Импортирован:{ENDC} {YELLOW}{path.abspath(md5_data_file)}{ENDC}"); log=True
-                        else: print(f"   $ {RED}Файл не содержит MD5 данные{ENDC} (Последней строкой должно быть {YELLOW}MD5LOG{ENDC})")          ; log=False
+                        if md5log_IMPORTED[-1] == "MD5LOG": print(f"   $ {ORANGE}Импортирован:{ENDC} {YELLOW}{path.abspath(md5_data_file)}{ENDC}"); log=True;  md5log_IMPORTED.pop(-1)
+                        else: print(f"   $ {RED}Файл не содержит MD5 данные{ENDC} (Последней строкой должно быть {YELLOW}MD5LOG{ENDC})")          ; log=False; md5log_IMPORTED = ''
 
                         if log:
                             while True:
