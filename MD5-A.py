@@ -1,4 +1,3 @@
-from audioop import byteswap
 from os import path, walk, get_terminal_size
 from hashlib import md5 as calc_md5_for
 from datetime import date, datetime
@@ -73,9 +72,9 @@ def CheckIgnore(filefolder):
         else: i += 1
 
 def ClearIgnore():
+    global IgnoreFolders
     global IgnoreFilesize_Max
     global IgnoreFilesize_Min
-    global IgnoreFolders
 
     IgnoreFolders.clear()
     IgnoreFilesize_Max = 10 ** 10
@@ -130,11 +129,14 @@ def MD5_Calculate(InputFolder):
                                 md5_hash = calc_md5_for(fp.read()).hexdigest()
                                 md5log  += f"{fquestion}\n{md5_hash}\n"
 
-                                f_hashed += 1; print(f"\r   {md5_hash}", flush=True)
+                                print(f"\r   {md5_hash}", flush=True)
+                                f_hashed += 1
 
                                 md5log_alt += f"---\n  > {fquestion}\n\n    {md5_hash}\n"
 
-                        except Exception as e: f_errors += 1; print(f"\r   {RED}{e}{ENDC}", flush=True)
+                        except Exception as e: 
+                            f_errors += 1
+                            print(f"\r   {RED}{e}{ENDC}", flush=True)
 
 
     if f_hashed == 0: print(f"   Контрольные суммы не составлены ни для одно файла . . .{' ' * (get_terminal_size()[0] - 58)}")
@@ -163,12 +165,14 @@ def MD5_Calculate(InputFolder):
             if md5l_file == "*отмена": break
 
             elif '?' in md5l_file:
-                
-                md5l_file = md5l_file.split('?')[-1] + '.md'
 
+                print("   $ Сохранение файла..", end='')
+                md5l_file = md5l_file.split('?')[-1] + '.md'
+                
                 md5l = open(md5l_file, 'w', encoding='utf-8')
                 md5l.write(md5log_alt), md5l.close()
-                print(f"{ENDC}\r   $ {ORANGE}Файл{ENDC} {YELLOW}{path.abspath(md5l_file)}{ENDC} (Markdown) {ORANGE}сохранён.{ENDC}", flush=True)
+                
+                print(f"\r   $ {ORANGE}Файл{ENDC} {YELLOW}{path.abspath(md5l_file)}{ENDC} (Markdown) {ORANGE}сохранён.{ENDC}", flush=True)
 
             else:
                 try:
@@ -248,7 +252,9 @@ def MD5_Search(InputFolder):
                                         if f_founds == f_count_inlog:
                                             allfounded = True
 
-                            except Exception as e: f_errors += 1; print(f"\r      {RED}Ошибка: {filename}{ENDC}: {YELLOW}{e}{ENDC}", flush=True)
+                            except Exception as e: 
+                                f_errors += 1
+                                print(f"\r      {RED}Ошибка: {filename}{ENDC}: {YELLOW}{e}{ENDC}", flush=True)
 
 
     TerminalWidth = get_terminal_size()[0]
@@ -258,8 +264,7 @@ def MD5_Search(InputFolder):
 
     t_total = round(time() - t_start, 2)
 
-    
-    if len(str(f_count_inlog) + str(f_founds)) + 1 < len(str(f_passed)): bordersize = ' ' * ( 23 + len(str(f_passed)) )
+    if len(str(f_count_inlog) + str(f_founds)) + 1   <   len(str(f_passed)):   bordersize = ' ' * ( 23 + len(str(f_passed)) )
     else: bordersize = ' ' * ( 23 + len(str(f_count_inlog) + str(f_founds)) + 1 )
 
     print(f"""
@@ -281,10 +286,12 @@ def MD5_Search(InputFolder):
             else:
                 try:
                     
+                    print("    $ Сохранение файла..", end='')
                     founded_log_file += '.md'
 
                     md5l = open(founded_log_file, 'w', encoding='utf-8')
                     md5l.write(founded_log), md5l.close()
+                    
                     print(f"{ENDC}\r    $ {ORANGE}Файл{ENDC} {YELLOW}{path.abspath(founded_log_file)}{ENDC} (Markdown) {ORANGE}сохранён.{ENDC}", flush=True)
                     break
 
@@ -325,6 +332,7 @@ if __name__ == "__main__":
                         else: print(f"   $ {RED}Каталог не найден.{ENDC}")
 
 
+
             elif CurrentInput == op[1]:
                 OnlyNamesOldState = OnlyNames
                 OnlyNames = True
@@ -358,6 +366,7 @@ if __name__ == "__main__":
                                 if not '*' in InputFolder and not '>' in InputFolder and not '<' in InputFolder:
                                     if path.isdir(InputFolder): MD5_Search(InputFolder)
                                     else: print(f"   $ {RED}Каталог не найден.{ENDC}")
+
 
 
                     elif md5_data_file == "*назад": break
