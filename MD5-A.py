@@ -1,3 +1,4 @@
+from binascii import a2b_base64
 from os import path, walk, get_terminal_size
 from hashlib import md5 as calc_md5_for
 from datetime import date, datetime
@@ -7,10 +8,12 @@ from time import time
 IgnoreFilesize_Max = 10 ** 10
 IgnoreFilesize_Min = 0
 IgnoreFolders  = []
+AllfoundToggle = True
 OnlyNames      = False
 InputFolder    = ''
 CurrentInput   = ''
 op = ['1', '2', '3']
+
 
 GREEN  = "\u001b[38;5;114m"
 RED    = "\u001b[38;5;160m"
@@ -18,6 +21,7 @@ YELLOW = "\u001b[38;5;229m"
 ORANGE = "\u001b[38;5;214m"
 ENDC   = "\u001b[0m"
 def ec(): print(ENDC, end='')
+
 
 s = 0
 def IgnoreFolders_Set(InputFolder):
@@ -85,19 +89,18 @@ def ClearIgnore():
 
 
 
-
 def MD5_Calculate(InputFolder):
     global Ignored
 
     print("")
 
-    t_start = time()
+    t_start  = time()
+
+    md5log   = ''
 
     f_passed = 0
     f_hashed = 0
     f_errors = 0
-
-    md5log   = ''
 
     md5log_alt = f'```{date.today()} {datetime.now().strftime("%H:%M:%S")} | {path.abspath(InputFolder)}```\n\n'
 
@@ -111,11 +114,11 @@ def MD5_Calculate(InputFolder):
             if len(IgnoreFolders) > 0: CheckIgnore(filefolder)
 
             if filename != "desktop.ini":
-                
+
                 f_passed += 1
-                
+
                 if not Ignored:
-                    if filesize_mb > IgnoreFilesize_Min and filesize_mb < IgnoreFilesize_Max:
+                    if IgnoreFilesize_Min < filesize_mb < IgnoreFilesize_Max:
 
                         try:
                             
@@ -139,8 +142,7 @@ def MD5_Calculate(InputFolder):
                             print(f"\r   {RED}{e}{ENDC}", flush=True)
 
 
-    if f_hashed == 0: print(f"   Контрольные суммы не составлены ни для одно файла . . .{' ' * (get_terminal_size()[0] - 58)}")
-
+    if f_hashed == 0: print(f"   Контрольные суммы не были составлены . . .{' ' * (get_terminal_size()[0] - 58)}")
 
     t_total = round(time() - t_start, 2)
 
@@ -154,11 +156,11 @@ def MD5_Calculate(InputFolder):
       Время: {ORANGE}{t_total} с{ENDC}.
     ⌞{bordersize}⌟
     """)
- 
+
     if f_hashed > 0:
-        
+
         md5log += "MD5LOG"
-        
+
         while True:
             md5l_file = input(f" > Имя/Путь+имя сохраняемого файла с MD5 данными: {YELLOW}"); ec()
 
@@ -166,12 +168,12 @@ def MD5_Calculate(InputFolder):
 
             elif '?' in md5l_file:
 
-                print("   $ Сохранение файла..", end='')
+                print("   $ Сохранение Markdown-файла..", end='')
                 md5l_file = md5l_file.split('?')[-1] + '.md'
                 
                 md5l = open(md5l_file, 'w', encoding='utf-8')
                 md5l.write(md5log_alt), md5l.close()
-                
+
                 print(f"\r   $ {ORANGE}Файл{ENDC} {YELLOW}{path.abspath(md5l_file)}{ENDC} (Markdown) {ORANGE}сохранён.{ENDC}", flush=True)
 
             else:
@@ -188,10 +190,9 @@ def MD5_Calculate(InputFolder):
                 except OSError         : print(f"\r   $ {RED}Ошибка создания файла{ENDC} ({YELLOW}Имя файла не должно содержать специальные символы{ENDC}).", flush=True)
                 except Exception as e  : print(f"\r   $ {RED}Ошибка создания файла{ENDC} ({YELLOW}{e}{ENDC}).", flush=True)
 
+
 def MD5_Search(InputFolder):
     global Ignored
-    
-    allfounded = False
 
     InputFolder = path.abspath(InputFolder)
 
@@ -200,7 +201,7 @@ def MD5_Search(InputFolder):
     f_founds = 0
     f_passed = 0
     f_errors = 0
-    
+
     founded_log = f'```{date.today()} {datetime.now().strftime("%H:%M:%S")} | {md5_data_file} >> {path.abspath(InputFolder)}```\n\n'
 
     print(f"\n    $ {ORANGE}Выбранная для поиска папка:{ENDC} {YELLOW}{InputFolder}{ENDC}; {ORANGE}Файл с MD5 данными:{ENDC} {YELLOW}{path.abspath(md5_data_file)}{ENDC}.")
@@ -210,57 +211,57 @@ def MD5_Search(InputFolder):
     f_count_inlog = int(len(md5log_IMPORTED) / 2)
 
     print(f"\r    $ События:{' ' * 40}", flush=True)
-    
+
     for filefolder, dirs, files in walk(InputFolder):
-        if not allfounded:
-            for filename in files:
+        for filename in files:
 
-                fullpath    = f"{filefolder}\\{filename}"
-                filesize_mb = path.getsize(fullpath) / (1024*1024)
+            fullpath    = f"{filefolder}\\{filename}"
+            filesize_mb = path.getsize(fullpath) / (1024*1024)
 
-                Ignored = False
-                if len(IgnoreFolders) > 0: CheckIgnore(filefolder)
+            Ignored = False
+            if len(IgnoreFolders) > 0: CheckIgnore(filefolder)
 
-                if filename != "desktop.ini":
+            searching = f"\r    $ Поиск по списку MD5 данных в выбранной папке: {f_passed}/{f_count_total} {filename if OnlyNames else fullpath}"
+            TerminalWidth = get_terminal_size()[0]; searching += ' ' * (TerminalWidth - len(searching))
+            if len(searching) > TerminalWidth: searching = searching[0:TerminalWidth-3] + " .."
+            print(searching, end='', flush=True)
 
-                    f_passed += 1
+            if filename != "desktop.ini":
 
-                    if not Ignored:
-                        if filesize_mb > IgnoreFilesize_Min and filesize_mb < IgnoreFilesize_Max:
+                if AllfoundToggle:
+                    if f_founds == f_count_inlog:
+                        break
 
-                            try:
+                f_passed += 1
 
-                                searching = f"\r    $ Поиск по списку MD5 данных в выбранной папке: {f_passed}/{f_count_total} {filename if OnlyNames else fullpath}"
-                                TerminalWidth = get_terminal_size()[0]; searching += ' ' * (TerminalWidth - len(searching))
-                                if len(searching) > TerminalWidth: searching = searching[0:TerminalWidth-3] + " .."
-                                print(searching, end='', flush=True)
+                if not Ignored:
+                    if IgnoreFilesize_Min < filesize_mb < IgnoreFilesize_Max:
 
-                                with open(fullpath, 'rb') as fp:
-                                    curr_md5_hash = calc_md5_for(fp.read()).hexdigest()
+                        try:
 
-                                if curr_md5_hash in md5log_IMPORTED:
-                                    md5log_IMPORTED_founded_md5index = md5log_IMPORTED.index(curr_md5_hash)
+                            with open(fullpath, 'rb') as fp:
+                                curr_md5_hash = calc_md5_for(fp.read()).hexdigest()
 
-                                    if md5log_IMPORTED_founded_md5index % 2 != 0:
-                                        md5log_IMPORTED_founded_md5      = md5log_IMPORTED[md5log_IMPORTED_founded_md5index]
-                                        md5log_IMPORTED_founded_filename = md5log_IMPORTED[md5log_IMPORTED_founded_md5index - 1]
+                            if curr_md5_hash in md5log_IMPORTED:
+                                md5log_IMPORTED_founded_md5index = md5log_IMPORTED.index(curr_md5_hash)
 
-                                        f_founds += 1; print(f"\r      {GREEN}Найден: {md5log_IMPORTED_founded_filename}{ENDC} (MD5:{md5log_IMPORTED_founded_md5}) как {YELLOW}{fullpath}{ENDC}", flush=True)
+                                if md5log_IMPORTED_founded_md5index % 2 != 0:
+                                    md5log_IMPORTED_founded_md5      = md5log_IMPORTED[md5log_IMPORTED_founded_md5index]
+                                    md5log_IMPORTED_founded_filename = md5log_IMPORTED[md5log_IMPORTED_founded_md5index - 1]
 
-                                        founded_log += f"---\n  > {md5log_IMPORTED_founded_filename}\n\n    {fullpath}\n"
+                                    f_founds += 1; print(f"\r      {GREEN}Найден: {md5log_IMPORTED_founded_filename}{ENDC} (MD5:{md5log_IMPORTED_founded_md5}) как {YELLOW}{fullpath}{ENDC}", flush=True)
 
-                                        if f_founds == f_count_inlog:
-                                            allfounded = True
+                                    founded_log += f"---\n  > {md5log_IMPORTED_founded_filename}\n\n    {fullpath}\n"
 
-                            except Exception as e: 
-                                f_errors += 1
-                                print(f"\r      {RED}Ошибка: {filename}{ENDC}: {YELLOW}{e}{ENDC}", flush=True)
+
+                        except Exception as e: 
+                            f_errors += 1
+                            print(f"\r      {RED}Ошибка: {filename}{ENDC}: {YELLOW}{e}{ENDC}", flush=True)
 
 
     TerminalWidth = get_terminal_size()[0]
     if f_founds == 0: print(f"\r{' ' * TerminalWidth}\n\r      Ничего не найдено . . .{' ' * (TerminalWidth - 29)}\n\n    $ {ORANGE}Поиск по списку MD5 данных в выбранной папке завершён.{ENDC}{' ' * (TerminalWidth - 60)}", flush=True)
     else: print(f"\r    $ {ORANGE}Поиск по списку MD5 данных в выбранной папке завершён.{ENDC}{' ' * (TerminalWidth - 60)}", flush=True)
-
 
     t_total = round(time() - t_start, 2)
 
@@ -276,7 +277,7 @@ def MD5_Search(InputFolder):
          Время: {ORANGE}{t_total} с{ENDC}.
        ⌞{bordersize}⌟
     """)
-    
+
     if f_founds > 0:
         while True:
             founded_log_file = input(f"    > Имя/Путь+имя Markdown-лога найденных файлов: {YELLOW}"); ec()
@@ -302,10 +303,13 @@ def MD5_Search(InputFolder):
     print(f"{'―' * get_terminal_size()[0]}\n")
 
 
+
+
+
 if __name__ == "__main__":
 
     print("\n(1)Составить контрольные суммы файлов | (2)Найти файлы по данным контрольной суммы | (3)Выйти")
-    
+
     while True:
 
         while CurrentInput != op[0:2]:
@@ -357,6 +361,9 @@ if __name__ == "__main__":
                                     if   InputFolder ==  '*назад'   : break
                                     elif InputFolder ==  '*имена'   : OnlyNames = True ; print(f"   $ {ORANGE}Только имена файлов.{ENDC}")
                                     elif InputFolder ==  '*полные'  : OnlyNames = False; print(f"   $ {ORANGE}Полные пути ко всем файлам.{ENDC}")
+                                    elif InputFolder == '*allfound' : 
+                                        AllfoundToggle = False if AllfoundToggle else True
+                                        print(f"    $ {ORANGE}{'Заканчивать поиск в папке после нахождения всех объектов из импортированного списка' if AllfoundToggle else 'Продолжать искать объекты несмотря на их количество в импортированном списке и количество найденных'}.{ENDC}")
                                     elif InputFolder == '*очистить' : ClearIgnore()
 
                                     else: IgnoreFolders_Set(InputFolder)
