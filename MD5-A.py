@@ -1,4 +1,5 @@
 from os import path, walk, get_terminal_size
+from send2trash import send2trash
 from hashlib import md5 as calc_md5_for
 from datetime import date, datetime
 from time import time
@@ -8,6 +9,7 @@ IgnoreFilesize_Max = 10 ** 10
 IgnoreFilesize_Min = 0
 IgnoreFolders  = []
 AllfoundToggle = True
+CopyDelToggle  = False
 OnlyNames      = False
 InputFolder    = ''
 CurrentInput   = ''
@@ -182,12 +184,12 @@ def MD5_Calculate(InputFolder):
                     md5l = open(md5l_file, 'w', encoding='utf-8')
                     md5l.write(md5log), md5l.close()
 
-                    print(f"{ENDC}\r   $ {ORANGE}Файл{ENDC} {YELLOW}{path.abspath(md5l_file)}{ENDC} {ORANGE}сохранён.{ENDC}\n{'―' * get_terminal_size()[0]}\n", flush=True)
+                    print(f"\r   $ {ORANGE}Файл{ENDC} {YELLOW}{path.abspath(md5l_file)} {ORANGE}сохранён.{ENDC}\n{'―' * get_terminal_size()[0]}\n", flush=True)
                     break
 
-                except PermissionError : print(f"\r   $ {RED}Ошибка создания файла{ENDC} ({YELLOW}Нет разрешения{ENDC}).", flush=True)
-                except OSError         : print(f"\r   $ {RED}Ошибка создания файла{ENDC} ({YELLOW}Имя файла не должно содержать специальные символы{ENDC}).", flush=True)
-                except Exception as e  : print(f"\r   $ {RED}Ошибка создания файла{ENDC} ({YELLOW}{e}{ENDC}).", flush=True)
+                except PermissionError : print(f"\r   $ {RED}Ошибка создания файла ({YELLOW}Нет разрешения{ENDC}).", flush=True)
+                except OSError         : print(f"\r   $ {RED}Ошибка создания файла ({YELLOW}Имя файла не должно содержать специальные символы{ENDC}).", flush=True)
+                except Exception as e  : print(f"\r   $ {RED}Ошибка создания файла ({YELLOW}{e}{ENDC}).", flush=True)
 
 
 def MD5_Search(InputFolder):
@@ -203,7 +205,7 @@ def MD5_Search(InputFolder):
 
     founded_log = f'```{date.today()} {datetime.now().strftime("%H:%M:%S")} | {md5_data_file} >> {path.abspath(InputFolder)}```\n\n'
 
-    print(f"\n    $ {ORANGE}Выбранная для поиска папка:{ENDC} {YELLOW}{InputFolder}{ENDC}; {ORANGE}Файл с MD5 данными:{ENDC} {YELLOW}{path.abspath(md5_data_file)}{ENDC}.")
+    print(f"\n    $ {ORANGE}Выбранная для поиска папка: {YELLOW}{InputFolder}; {ORANGE}Файл с MD5 данными: {YELLOW}{path.abspath(md5_data_file)}{ENDC}.")
 
     print("\r    $ Подсчёт количества файлов в выбранном каталоге..", end='')
     f_count_total = sum(len(files) for root, dirs, files in walk(InputFolder))
@@ -247,10 +249,18 @@ def MD5_Search(InputFolder):
                                 if md5log_IMPORTED_founded_md5index % 2 != 0:
                                     md5log_IMPORTED_founded_md5      = md5log_IMPORTED[md5log_IMPORTED_founded_md5index]
                                     md5log_IMPORTED_founded_filename = md5log_IMPORTED[md5log_IMPORTED_founded_md5index - 1]
+                                    
+                                    if not CopyDelToggle:
 
-                                    f_founds += 1; print(f"\r      {GREEN}Найден: {md5log_IMPORTED_founded_filename}{ENDC} (MD5:{md5log_IMPORTED_founded_md5}) как {YELLOW}{fullpath}{ENDC}", flush=True)
+                                        f_founds += 1; print(f"\r      {GREEN}Найден: {md5log_IMPORTED_founded_filename}{ENDC} (MD5:{md5log_IMPORTED_founded_md5}) как {YELLOW}{fullpath}{ENDC}", flush=True)
 
-                                    founded_log += f"---\n  > {md5log_IMPORTED_founded_filename}\n\n    {fullpath}\n"
+                                        founded_log += f"---\n  > {md5log_IMPORTED_founded_filename}\n\n    {fullpath}\n"
+                                        
+                                    else: 
+                                        print(f"\r      Копия объекта {YELLOW}{md5log_IMPORTED_founded_filename}{ENDC} ({ORANGE}{fullpath}{ENDC}) {ORANGE}отправлена в корзину.{ENDC}", flush=True)
+                                        
+                                        send2trash(fullpath)
+                                        f_founds += 1
 
 
                         except Exception as e: 
@@ -270,14 +280,14 @@ def MD5_Search(InputFolder):
     print(f"""
        ⌜{bordersize}⌝
          Файлов просмотрено:  {YELLOW}{f_passed}{ENDC}
-         Файлов найдено:      {GREEN }{f_founds}/{f_count_inlog}{ENDC}
+         {'Файлов найдено:' if not CopyDelToggle else 'Копий удалено: '}      {GREEN }{f_founds}/{f_count_inlog}{ENDC}
          Ошибок:              {RED   }{f_errors}{ENDC}
 
          Время: {ORANGE}{t_total} с{ENDC}.
        ⌞{bordersize}⌟
     """)
 
-    if f_founds > 0:
+    if f_founds > 0 and not CopyDelToggle:
         while True:
             founded_log_file = input(f"    > Имя/Путь+имя Markdown-лога найденных файлов: {YELLOW}"); ec()
 
@@ -292,12 +302,12 @@ def MD5_Search(InputFolder):
                     md5l = open(founded_log_file, 'w', encoding='utf-8')
                     md5l.write(founded_log), md5l.close()
                     
-                    print(f"{ENDC}\r    $ {ORANGE}Файл{ENDC} {YELLOW}{path.abspath(founded_log_file)}{ENDC} (Markdown) {ORANGE}сохранён.{ENDC}", flush=True)
+                    print(f"\r    $ {ORANGE}Файл {YELLOW}{path.abspath(founded_log_file)}{ENDC} (Markdown) {ORANGE}сохранён.{ENDC}", flush=True)
                     break
 
-                except PermissionError : print(f"\r    $ {RED}Ошибка создания файла{ENDC} ({YELLOW}Нет разрешения{ENDC}).", flush=True)
-                except OSError         : print(f"\r    $ {RED}Ошибка создания файла{ENDC} ({YELLOW}Имя файла не должно содержать специальные символы{ENDC}).", flush=True)
-                except Exception as e  : print(f"\r    $ {RED}Ошибка создания файла{ENDC} ({YELLOW}{e}{ENDC}).", flush=True)
+                except PermissionError : print(f"\r    $ {RED}Ошибка создания файла ({YELLOW}Нет разрешения{ENDC}).", flush=True)
+                except OSError         : print(f"\r    $ {RED}Ошибка создания файла ({YELLOW}Имя файла не должно содержать специальные символы{ENDC}).", flush=True)
+                except Exception as e  : print(f"\r    $ {RED}Ошибка создания файла ({YELLOW}{e}{ENDC}).", flush=True)
 
     print(f"{'―' * get_terminal_size()[0]}\n")
 
@@ -334,8 +344,6 @@ if __name__ == "__main__":
                         if path.isdir(InputFolder): MD5_Calculate(InputFolder)
                         else: print(f"   $ {RED}Каталог не найден.{ENDC}")
 
-
-
             elif CurrentInput == op[1]:
                 OnlyNamesOldState = OnlyNames
                 OnlyNames = True
@@ -347,23 +355,29 @@ if __name__ == "__main__":
 
                         with open(md5_data_file, encoding='utf-8') as md5log_file:
                             md5log_IMPORTED = [row.strip() for row in md5log_file]
-                        if md5log_IMPORTED[-1] == "MD5LOG": print(f"   $ {ORANGE}Импортирован:{ENDC} {YELLOW}{path.abspath(md5_data_file)}{ENDC}"); log=True;  md5log_IMPORTED.pop(-1)
-                        else: print(f"   $ {RED}Файл не содержит MD5 данные{ENDC} (Последней строкой должно быть {YELLOW}MD5LOG{ENDC})")          ; log=False; md5log_IMPORTED = ''
+                        if md5log_IMPORTED[-1] == "MD5LOG": print(f"   $ {ORANGE}Импортирован: {YELLOW}{path.abspath(md5_data_file)}{ENDC}"); log=True;  md5log_IMPORTED.pop(-1)
+                        else: print(f"   $ {RED}Файл не содержит MD5 данные{ENDC} (Последней строкой должно быть {YELLOW}MD5LOG{ENDC})")    ; log=False; md5log_IMPORTED = ''
 
                         if log:
                             while True:
                                 s = 1
-                                InputFolder = input(f"  > Папка с файлами для поиска: {YELLOW}"); ec()
+                                InputFolder = input(f"{f'  > Папка с файлами для поиска: {YELLOW}' if not CopyDelToggle else f'  > {ORANGE}*copydel{ENDC} Папка с файлами для удаления копий: {YELLOW}'}"); ec()
 
 
                                 if '*' in InputFolder:
                                     if   InputFolder ==  '*назад'   : break
                                     elif InputFolder ==  '*имена'   : OnlyNames = True ; print(f"   $ {ORANGE}Только имена файлов.{ENDC}")
                                     elif InputFolder ==  '*полные'  : OnlyNames = False; print(f"   $ {ORANGE}Полные пути ко всем файлам.{ENDC}")
-                                    elif InputFolder == '*allfound' : 
-                                        AllfoundToggle = False if AllfoundToggle else True
-                                        print(f"    $ {ORANGE}{'Заканчивать поиск в папке после нахождения всех объектов из импортированного списка' if AllfoundToggle else 'Продолжать искать объекты несмотря на их количество в импортированном списке и количество найденных'}.{ENDC}")
                                     elif InputFolder == '*очистить' : ClearIgnore()
+                                    
+                                    elif InputFolder == '*allfound':   
+                                        AllfoundToggle = False if AllfoundToggle else True
+                                        print(f"    $ {ORANGE}{'Заканчивать поиск в папке после нахождения всех объектов из импортированного списка' if AllfoundToggle else 'Продолжать искать объекты несмотря на их количество в импортированном списке и количество найденных'}.{ENDC}")                               
+
+                                    elif InputFolder == '*copydel':
+                                        CopyDelToggle = False if CopyDelToggle else True
+                                        if CopyDelToggle: AllfoundToggle = False
+                                        print(f"    $ {ORANGE}{f'РЕЖИМ УДАЛЕНИЯ КОПИЙ (send2trash) {RED}Вкл{ENDC}; {ORANGE}(*allfound Выкл){ENDC}' if CopyDelToggle else f'РЕЖИМ УДАЛЕНИЯ КОПИЙ (send2trash) {GREEN}Выкл{ENDC}'}.\n")
 
                                     else: IgnoreFolders_Set(InputFolder)
 
@@ -380,7 +394,5 @@ if __name__ == "__main__":
 
                 OnlyNames = OnlyNamesOldState
 
-            elif CurrentInput == "*имена" : OnlyNames = True ; print(f"  $ {ORANGE}Только имена файлов.{ENDC}")
-            elif CurrentInput == "*полные": OnlyNames = False; print(f"  $ {ORANGE}Полные пути ко всем файлам.{ENDC}")
 
             elif CurrentInput == op[2]: ec(); exit()
