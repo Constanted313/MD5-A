@@ -1,4 +1,3 @@
-from binascii import a2b_base64
 from os import path, walk, get_terminal_size
 from hashlib import md5 as calc_md5_for
 from datetime import date, datetime
