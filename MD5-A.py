@@ -355,14 +355,15 @@ if __name__ == "__main__":
 
                         with open(md5_data_file, encoding='utf-8') as md5log_file:
                             md5log_IMPORTED = [row.strip() for row in md5log_file]
-                        if md5log_IMPORTED[-1] == "MD5LOG": print(f"   $ {ORANGE}Импортирован: {YELLOW}{path.abspath(md5_data_file)}{ENDC}"); log=True;  md5log_IMPORTED.pop(-1)
-                        else: print(f"   $ {RED}Файл не содержит MD5 данные{ENDC} (Последней строкой должно быть {YELLOW}MD5LOG{ENDC})")    ; log=False; md5log_IMPORTED = ''
-
-                        if log:
+                        
+                            
+                        if md5log_IMPORTED[-1] == "MD5LOG": 
+                            md5log_IMPORTED.pop(-1)
+                            print(f"   $ {ORANGE}Импортирован: {YELLOW}{path.abspath(md5_data_file)}{ENDC}")
+                            
                             while True:
                                 s = 1
                                 InputFolder = input(f"{f'  > Папка с файлами для поиска: {YELLOW}' if not CopyDelToggle else f'  > {ORANGE}*copydel{ENDC} Папка с файлами для удаления копий: {YELLOW}'}"); ec()
-
 
                                 if '*' in InputFolder:
                                     if   InputFolder ==  '*назад'   : break
@@ -387,6 +388,7 @@ if __name__ == "__main__":
                                     if path.isdir(InputFolder): MD5_Search(InputFolder)
                                     else: print(f"   $ {RED}Каталог не найден.{ENDC}")
 
+                        else: print(f"   $ {RED}Файл не содержит MD5 данные{ENDC} (Последней строкой должно быть {YELLOW}MD5LOG{ENDC})"); md5log_IMPORTED = ''
 
 
                     elif md5_data_file == "*назад": break
