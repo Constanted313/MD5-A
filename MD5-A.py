@@ -1,9 +1,10 @@
-from os import path, walk, get_terminal_size
+from os import path, walk, get_terminal_size, system
 from send2trash import send2trash
 from hashlib import md5 as calc_md5_for
 from datetime import date, datetime
 from time import time
 
+system('cls||clear')
 
 IgnoreFilesize_Max = 10 ** 10
 IgnoreFilesize_Min = 0
@@ -85,7 +86,7 @@ def ClearIgnore():
     IgnoreFilesize_Max = 10 ** 10
     IgnoreFilesize_Min = 0
 
-    print(f"{' ' * s}   $ {ORANGE}Список игнорируемых папок и игнорируемый размер файлов очищены.{ENDC}")
+    print(f"{' ' * s}   $ {ORANGE}Список игнорируемых папок и границы размера файлов очищены.{ENDC}")
 
 
 
@@ -97,7 +98,9 @@ def MD5_Calculate(InputFolder):
 
     t_start  = time()
 
-    md5log   = ''
+    md5log = ''
+    md5log_maxsize = 0 
+    md5log_minsize = 0
 
     f_passed = 0
     f_hashed = 0
@@ -110,6 +113,11 @@ def MD5_Calculate(InputFolder):
 
             fullpath    = f"{filefolder}\\{filename}"
             filesize_mb = path.getsize(fullpath) / (1024*1024)
+            
+            if filesize_mb > md5log_maxsize:
+                md5log_maxsize = filesize_mb
+            else: md5log_minsize = filesize_mb
+                
 
             Ignored = False
             if len(IgnoreFolders) > 0: CheckIgnore(filefolder)
@@ -160,6 +168,8 @@ def MD5_Calculate(InputFolder):
 
     if f_hashed > 0:
 
+        md5log += f"{round(md5log_minsize, 3)}\n"
+        md5log += f"{round(md5log_maxsize, 3)}\n"
         md5log += "MD5LOG"
 
         while True:
@@ -317,7 +327,7 @@ def MD5_Search(InputFolder):
 
 if __name__ == "__main__":
 
-    print("\n(1)Составить контрольные суммы файлов | (2)Найти файлы по данным контрольной суммы | (3)Выйти")
+    print("(1)Составить контрольные суммы файлов каталога; (2)Найти файлы по составленным данным контрольной суммы; (3)Выйти")
 
     while True:
 
@@ -357,9 +367,13 @@ if __name__ == "__main__":
                             md5log_IMPORTED = [row.strip() for row in md5log_file]
                         
                             
-                        if md5log_IMPORTED[-1] == "MD5LOG": 
-                            md5log_IMPORTED.pop(-1)
-                            print(f"   $ {ORANGE}Импортирован: {YELLOW}{path.abspath(md5_data_file)}{ENDC}")
+                        if md5log_IMPORTED[-1] == "MD5LOG":
+                            OldSizes = [IgnoreFilesize_Min, IgnoreFilesize_Max]
+                            IgnoreFilesize_Min = float(md5log_IMPORTED[-3])
+                            IgnoreFilesize_Max = float(md5log_IMPORTED[-2])
+                            md5log_IMPORTED.pop(-1); md5log_IMPORTED.pop(-2); md5log_IMPORTED.pop(-3)
+
+                            print(f"   $ {ORANGE}Импортирован: {YELLOW}{path.abspath(md5_data_file)}{ORANGE}, установлены локальные рамки размеров файлов{ENDC} [{IgnoreFilesize_Min} < Filesize(MB) < {IgnoreFilesize_Max}]{ORANGE}.{ENDC}")
                             
                             while True:
                                 s = 1
@@ -387,6 +401,9 @@ if __name__ == "__main__":
                                 if not '*' in InputFolder and not '>' in InputFolder and not '<' in InputFolder:
                                     if path.isdir(InputFolder): MD5_Search(InputFolder)
                                     else: print(f"   $ {RED}Каталог не найден.{ENDC}")
+
+                                    IgnoreFilesize_Min = OldSizes[0]; IgnoreFilesize_Max = OldSizes[1]
+                                    
 
                         else: print(f"   $ {RED}Файл не содержит MD5 данные{ENDC} (Последней строкой должно быть {YELLOW}MD5LOG{ENDC})"); md5log_IMPORTED = ''
 
